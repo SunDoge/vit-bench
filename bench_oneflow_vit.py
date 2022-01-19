@@ -1,10 +1,9 @@
 from typing import Callable
-from tqdm import trange
-from tqdm import tqdm
 
+import numpy as np
 import oneflow
 from oneflow import nn
-import numpy as np
+from tqdm import tqdm, trange
 
 from lib.vit import ViT_B_16_224
 
@@ -28,7 +27,6 @@ def bench(forward_and_backward: Callable, x, y, n=1000):
             pbar.update(batch_size)
 
 
-
 class VitTrainGraph(nn.Graph):
 
     def __init__(self, model, optimizer):
@@ -41,16 +39,11 @@ class VitTrainGraph(nn.Graph):
 
         self.add_optimizer(optimizer)
 
-
     def build(self, x, y):
         y_pred = self.model(x)
         loss = self.criterion(y_pred, y)
         loss.backward()
         return loss, y_pred
-
-
-
-
 
 
 def main():
@@ -76,7 +69,6 @@ def main():
     bench(model_graph, x, y, n=10)
 
     bench(model_graph, x, y, n=100)
-
 
 
 if __name__ == '__main__':

@@ -1,13 +1,11 @@
 from typing import Callable
-from tqdm import trange
-from tqdm import tqdm
 
+import numpy as np
+import timm
 import torch
 from torch import nn
-import numpy as np
 from torch.backends import cudnn
-
-import timm
+from tqdm import tqdm, trange
 
 
 def bench(forward_and_backward: Callable, x, y, n=1000):
@@ -28,7 +26,6 @@ def bench(forward_and_backward: Callable, x, y, n=1000):
             pbar.update(batch_size)
 
 
-
 class VitTrainGraph:
 
     def __init__(self, model, optimizer):
@@ -36,7 +33,6 @@ class VitTrainGraph:
         self.model = model
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optimizer
-
 
     def __call__(self, x, y):
         y_pred = self.model(x)
@@ -47,16 +43,10 @@ class VitTrainGraph:
         return loss, y_pred
 
 
-
-
-
-
 def main():
-    batch_size = 32
-
+    batch_size = 64
 
     np.random.seed(42)
-
 
     cudnn.benchmark = True
     device = torch.device('cuda')
@@ -65,7 +55,7 @@ def main():
     # from lib.timm_vit import vit_base_patch16_224_bench
     # vit = vit_base_patch16_224_bench()
 
-    vit = torch.jit.script(vit)
+    # vit = torch.jit.script(vit)
 
     vit.to(device)
 
@@ -79,7 +69,6 @@ def main():
     bench(model_graph, x, y, n=10)
 
     bench(model_graph, x, y, n=100)
-
 
 
 if __name__ == '__main__':
