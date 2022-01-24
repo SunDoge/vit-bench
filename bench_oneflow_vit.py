@@ -20,7 +20,8 @@ def bench(forward_and_backward: Callable, x, y, n=1000):
     with tqdm(total=n * batch_size) as pbar:
         for _ in range(n):
 
-            loss, output = forward_and_backward(x_of, y_of)
+            # loss, output = forward_and_backward(x_of, y_of)
+            loss, output = forward_and_backward()
 
             loss.item()
 
@@ -29,32 +30,42 @@ def bench(forward_and_backward: Callable, x, y, n=1000):
 
 class VitTrainGraph(nn.Graph):
 
-    def __init__(self, model, optimizer):
+    def __init__(self, model, optimizer, batch_size: int):
         super().__init__()
         self.model = model
         self.criterion = nn.CrossEntropyLoss()
+        self.batch_size = batch_size
 
         self.config.allow_fuse_add_to_output()
         self.config.allow_fuse_model_update_ops()
 
         self.add_optimizer(optimizer)
 
-    def build(self, x, y):
+    # def build(self, x, y):
+    #     y_pred = self.model(x)
+    #     loss = self.criterion(y_pred, y)
+    #     loss.backward()
+    #     return loss, y_pred
+
+    def build(self):
+        x = oneflow.rand(self.batch_size, 3, 224, 224).to(oneflow.device('cuda'))
+        y = oneflow.randint(0, 1000, (self.batch_size,)).to(oneflow.device('cuda'))
         y_pred = self.model(x)
         loss = self.criterion(y_pred, y)
         loss.backward()
         return loss, y_pred
 
 
+
 def main():
-    batch_size = 64
+    batch_size = 32
 
     np.random.seed(42)
 
     device = oneflow.device('cuda')
-    vit = ViT_B_16_224()
-    # from flowvision.models.vit import vit_b_16_224
-    # vit = vit_b_16_224()
+    # vit = ViT_B_16_224()
+    from flowvision.models.vision_transformer import vit_base_patch16_224
+    vit = vit_base_patch16_224(num_classes=1000)
     vit.to(device)
 
     optimizer = oneflow.optim.SGD(vit.parameters())
@@ -62,7 +73,7 @@ def main():
     x = np.random.rand(batch_size, 3, 224, 224).astype(np.float32)
     y = np.random.randint(0, 1000, (batch_size,))
 
-    model_graph = VitTrainGraph(vit, optimizer)
+    model_graph = VitTrainGraph(vit, optimizer, batch_size)
 
     # model_graph.debug()
 
